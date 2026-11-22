@@ -49,3 +49,104 @@ body { margin: 0; background: var(--fondo); color: #222; }
   border-radius: 6px;
   font-size: 14px;
 }
+
+
+.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+
+.navbar {
+  height: 56px;
+  background: var(--guinda);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.navbar-logo { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+
+.user-menu { position: relative; }
+.user-button {
+  background: transparent;
+  border: 0;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 15px;
+}
+.user-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: grid;
+  place-items: center;
+}
+.user-dropdown {
+  position: absolute;
+  right: 0;
+  top: 44px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  min-width: 170px;
+  overflow: hidden;
+}
+.user-dropdown button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  border: 0;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  color: #222;
+}
+.user-dropdown button:hover { background: #f1e6ea; }
+
+.app-body { flex: 1; display: flex; }
+.sidebar {
+  width: 230px;
+  background: #fff;
+  border-right: 1px solid #e3e3e8;
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  color: #333;
+  text-decoration: none;
+  font-size: 15px;
+  border-left: 4px solid transparent;
+}
+.sidebar a:hover { background: #f6eef1; }
+.sidebar a.active {
+  background: #f1e6ea;
+  color: var(--guinda);
+  border-left-color: var(--guinda);
+  font-weight: 600;
+}
+.content { flex: 1; padding: 24px; overflow-x: auto; }
+
+@media (max-width: 700px) {
+  .app-body { flex-direction: column; }
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid #e3e3e8;
+    padding: 0;
+  }
+  .sidebar a { white-space: nowrap; border-left: 0; border-bottom: 3px solid transparent; }
+  .sidebar a.active { border-bottom-color: var(--guinda); }
+}

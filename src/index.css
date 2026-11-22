@@ -213,3 +213,62 @@ body { margin: 0; background: var(--fondo); color: #222; }
 .detail-list { display: grid; grid-template-columns: 130px 1fr; gap: 6px 12px; margin: 0; }
 .detail-list dt { color: #777; }
 .detail-list dd { margin: 0; }
+
+.tabs { display: flex; gap: 4px; border-bottom: 2px solid #e3e3e8; margin: 16px 0; flex-wrap: wrap; }
+.tab {
+  padding: 10px 18px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 15px;
+  color: #555;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+}
+.tab.active { color: var(--guinda); border-bottom-color: var(--guinda); font-weight: 600; }
+.tab:disabled { color: #aaa; cursor: not-allowed; }
+
+.toolbar { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.toolbar .btn-primary { margin-top: 0; padding: 10px 16px; }
+
+.data-table tbody tr.no-click { cursor: default; }
+.row-actions { display: flex; gap: 6px; }
+.btn-small {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+.btn-small:hover { background: #f6eef1; }
+.btn-small:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-danger { color: #b00020; border-color: #e5b5bd; }
+
+.btn-secondary {
+  padding: 11px 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.modal-wide { max-width: 640px; }
+.modal-form { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border: 0; padding: 0; margin: 0; }
+.form-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.form-grid input, .form-grid select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 15px;
+  background: #fff;
+}
+.form-grid input:disabled, .form-grid select:disabled { background: #f0f0f0; }
+.form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+.form-actions .btn-primary { margin-top: 0; padding: 11px 20px; }
+
+@media (max-width: 700px) {
+  .form-grid { grid-template-columns: 1fr; }
+}

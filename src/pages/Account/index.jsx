@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import api from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 
+// Formato del diccionario de datos: +XX-XXX-XXX-XXXX
+const PHONE_REGEX = /^\+\d{2}-\d{3}-\d{3}-\d{4}$/;
+
 // Convierte el error del backend en un texto en español para el usuario
 function get_error_text(err, fallback) {
   if (!err.response) return "No se pudo conectar con el servidor.";
@@ -63,6 +66,15 @@ export default function Account() {
   async function handle_contact_submit(e) {
     e.preventDefault();
     set_contact_msg(null);
+
+    // Valida el formato del teléfono
+    if (!PHONE_REGEX.test(phone_number.trim())) {
+      set_contact_msg({
+        type: "error",
+        text: "El teléfono debe tener el formato +52-664-123-4567.",
+      });
+      return;
+    }
 
     // Solo se envían los campos que cambiaron
     const changes = {};
@@ -159,7 +171,7 @@ export default function Account() {
         <input
           value={phone_number}
           onChange={(e) => set_phone_number(e.target.value)}
-          placeholder="+52-664-0000000"
+          placeholder="+52-664-123-4567"
           maxLength={16}
           required
         />

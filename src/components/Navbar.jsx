@@ -7,6 +7,13 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [is_open, set_is_open] = useState(false);
 
+  // Fecha actual en español, como en el mockup del documento
+  const today = new Date().toLocaleDateString("es-MX", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
   // Cierra la sesión y regresa al login
   function handle_logout() {
     logout();
@@ -14,15 +21,20 @@ export default function Navbar() {
   }
 
   return (
-    <header className="navbar">
-      <div className="navbar-logo">AxoMotor</div>
+    <header className="topbar">
+      <span className="topbar-date">{today}</span>
+
       <div className="user-menu">
-        <button className="user-button" onClick={() => set_is_open(!is_open)}>
-          <span className="user-icon">👤</span>
-          <span>{user.username}</span>
+        <button
+          className="avatar-button"
+          onClick={() => set_is_open(!is_open)}
+          title={user.username}
+        >
+          {user.username.charAt(0).toUpperCase()}
         </button>
         {is_open && (
           <div className="user-dropdown">
+            <div className="user-dropdown-name">{user.username}</div>
             <button
               onClick={() => {
                 set_is_open(false);

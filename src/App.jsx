@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login.jsx";
 import ProtectedRoute from "./auth/ProtectedRoute.jsx";
-import AdminRoute from "./auth/AdminRoute.jsx";
+import RoleRoute from "./auth/RoleRoute.jsx";
 import Layout from "./components/Layout.jsx";
 import Dashboard from "./pages/Dashboard";
 import Trips from "./pages/Trips";
@@ -22,12 +22,16 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/trips" element={<Trips />} />
           <Route path="/incidents" element={<Incidents />} />
-          <Route path="/drivers" element={<Drivers />} />
           <Route path="/vehicles" element={<Vehicles />} />
           <Route path="/account" element={<Account />} />
 
+          {/* Solo administradores y agentes */}
+          <Route element={<RoleRoute roles={["ADMIN", "AGENT"]} />}>
+            <Route path="/drivers" element={<Drivers />} />
+          </Route>
+
           {/* Solo administradores */}
-          <Route element={<AdminRoute />}>
+          <Route element={<RoleRoute roles={["ADMIN"]} />}>
             <Route path="/admin" element={<Admin />} />
           </Route>
         </Route>

@@ -1,7 +1,13 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 const ALL_ROLES = ["ADMIN", "AGENT", "DRIVER"];
+
+const ROLE_LABELS = {
+  ADMIN: "Administrador",
+  DRIVER: "Conductor",
+  AGENT: "Agente",
+};
 
 // Enlaces de la barra lateral y los roles que pueden verlos
 const nav_links = [
@@ -15,24 +21,42 @@ const nav_links = [
 ];
 
 export default function Sidebar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handle_logout() {
+    logout();
+    navigate("/login");
+  }
 
   return (
-    <nav className="sidebar">
-      {nav_links
-        // Solo se muestran las secciones permitidas para el rol del usuario
-        .filter((link) => link.roles.includes(user.role))
-        .map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            end={link.to === "/"}
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            <span>{link.icon}</span>
-            {link.label}
-          </NavLink>
-        ))}
-    </nav>
+    <aside className="side">
+      <div className="side-brand">
+        <span className="side-logo">A</span>
+        AxoMotor
+      </div>
+
+      <nav className="side-nav">
+        {nav_links
+          // Solo se muestran las secciones permitidas para el rol del usuario
+          .filter((link) => link.roles.includes(user.role))
+          .map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              end={link.to === "/"}
+              className={({ isActive }) => (isActive ? "side-link active" : "side-link")}
+            >
+              <span>{link.icon}</span>
+              {link.label}
+            </NavLink>
+          ))}
+      </nav>
+
+      <div className="side-footer">
+        <span>Sesión de {ROLE_LABELS[user.role] ?? user.role}</span>
+        <button onClick={handle_logout}>Cerrar sesión</button>
+      </div>
+    </aside>
   );
 }

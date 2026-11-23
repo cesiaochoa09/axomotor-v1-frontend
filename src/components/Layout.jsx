@@ -2,14 +2,14 @@ import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 
-// Estructura general: barra superior, barra lateral y contenido de cada sección
+// Estructura general: barra lateral a la izquierda; a la derecha, cabecera y contenido
 export default function Layout() {
   return (
-    <div className="app-shell">
-      <Navbar />
-      <div className="app-body">
-        <Sidebar />
-        <main className="content">
+    <div className="shell">
+      <Sidebar />
+      <div className="shell-main">
+        <Navbar />
+        <main className="shell-content">
           <Outlet />
         </main>
       </div>

@@ -2,29 +2,24 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
+import Icon from "../../components/Icon";
 import { get_license_status } from "../Admin/helpers";
 
-// Etiquetas y colores de los estados de incidencia del backend
+// Etiqueta y punto de color de cada estado de incidencia del backend
 const INCIDENT_STATUS = {
-  OPEN: { label: "Abierta", css: "badge-red" },
-  IN_REVISION: { label: "En revisión", css: "badge-yellow" },
-  CLOSED: { label: "Cerrada", css: "badge-green" },
-  DISCARDED: { label: "Descartada", css: "badge-gray" },
-};
-
-const ROLE_LABELS = {
-  ADMIN: "Administrador",
-  DRIVER: "Conductor",
-  AGENT: "Agente",
+  OPEN: { label: "Abierta", dot: "high" },
+  IN_REVISION: { label: "En revisión", dot: "mid" },
+  CLOSED: { label: "Cerrada", dot: "low" },
+  DISCARDED: { label: "Descartada", dot: "low" },
 };
 
 // Accesos rápidos (los enlaces de admin solo se muestran a administradores)
 const QUICK_ACTIONS = [
-  { to: "/trips", label: "Crear un viaje", icon: "➕" },
-  { to: "/trips", label: "Dar seguimiento", icon: "📍" },
-  { to: "/incidents", label: "Historial de incidencias", icon: "⚠️" },
-  { to: "/incidents", label: "Historial de eventos", icon: "📋" },
-  { to: "/admin", label: "Administración", icon: "🛠️", admin_only: true },
+  { to: "/trips", label: "Crear un viaje", icon: "plus" },
+  { to: "/trips", label: "Dar seguimiento", icon: "pin" },
+  { to: "/incidents", label: "Historial de incidencias", icon: "incidents" },
+  { to: "/incidents", label: "Historial de eventos", icon: "clipboard" },
+  { to: "/admin", label: "Administración", icon: "admin", admin_only: true },
 ];
 
 function QuickActions({ role }) {
@@ -32,7 +27,7 @@ function QuickActions({ role }) {
     <div className="quick-actions">
       {QUICK_ACTIONS.filter((a) => !a.admin_only || role === "ADMIN").map((a) => (
         <Link key={a.label} to={a.to} className="quick-action">
-          <span>{a.icon}</span>
+          <Icon name={a.icon} size={18} />
           {a.label}
         </Link>
       ))}
@@ -45,11 +40,10 @@ export default function Dashboard() {
   const is_staff = user.role === "ADMIN" || user.role === "AGENT";
 
   return (
-    <div>
-      <h1>Hola, {user.username}</h1>
-      <p className="muted">Sesión como {ROLE_LABELS[user.role] ?? user.role}.</p>
-
-      <QuickActions role={user.role} />
+    <div className="page">
+      <div className="page-header">
+        <h1>Hola, {user.username}</h1>
+      </div>
 
       {is_staff ? (
         <StaffOverview />
@@ -58,11 +52,13 @@ export default function Dashboard() {
           Desde el menú puedes consultar tus viajes, vehículos e incidencias.
         </p>
       )}
+
+      <QuickActions role={user.role} />
     </div>
   );
 }
 
-// KPIs y últimas incidencias (solo admin y agente)
+// KPIs, mapa y últimas incidencias (solo admin y agente)
 function StaffOverview() {
   const [kpis, set_kpis] = useState(null);
   const [kpi_error, set_kpi_error] = useState("");
@@ -92,14 +88,14 @@ function StaffOverview() {
     }
 
     // El endpoint de incidencias aún no existe en el backend: si responde error,
-    // se muestra un aviso en lugar de la tabla
+    // se muestra un aviso en lugar de la lista
     async function load_incidents() {
       try {
         const { data } = await api.get("/incidents/");
         const sorted = [...data].sort(
           (a, b) => new Date(b.registered_at) - new Date(a.registered_at)
         );
-        set_incidents(sorted.slice(0, 5));
+        set_incidents(sorted.slice(0, 4));
       } catch {
         set_incidents_available(false);
       }
@@ -111,7 +107,6 @@ function StaffOverview() {
 
   return (
     <>
-      <h2 className="section-title">Indicadores</h2>
       {kpi_error && <div className="error">{kpi_error}</div>}
       {!kpi_error && !kpis && <p>Cargando...</p>}
       {kpis && (
@@ -119,61 +114,87 @@ function StaffOverview() {
           <div className="kpi-card">
             <span className="kpi-label">Usuarios habilitados</span>
             <span className="kpi-value">{kpis.enabled_users}</span>
+            <span className="kpi-pill">Cuentas activas</span>
           </div>
           <div className="kpi-card">
             <span className="kpi-label">Conductores registrados</span>
             <span className="kpi-value">{kpis.drivers}</span>
-            <span className="kpi-note">{kpis.drivers_active} en servicio</span>
+            <span className="kpi-pill">{kpis.drivers_active} en servicio</span>
           </div>
-          <div className="kpi-card">
+          <div className={kpis.expiring > 0 ? "kpi-card kpi-warn" : "kpi-card"}>
             <span className="kpi-label">Licencias por vencer (30 días)</span>
             <span className="kpi-value">{kpis.expiring}</span>
+            <span className="kpi-pill">{kpis.expiring > 0 ? "Revisar pronto" : "Sin pendientes"}</span>
           </div>
-          <div className="kpi-card">
+          {/* El rojo solo aparece cuando hay licencias vencidas */}
+          <div className={kpis.expired > 0 ? "kpi-card kpi-alert" : "kpi-card"}>
             <span className="kpi-label">Licencias vencidas</span>
-            <span className={kpis.expired > 0 ? "kpi-value kpi-alert" : "kpi-value"}>
-              {kpis.expired}
-            </span>
+            <span className="kpi-value">{kpis.expired}</span>
+            <span className="kpi-pill">{kpis.expired > 0 ? "Requiere atención" : "Todo al día"}</span>
           </div>
         </div>
       )}
 
-      <h2 className="section-title">Últimas incidencias</h2>
-      {!incidents_available ? (
-        <p className="muted">
-          Las incidencias estarán disponibles cuando el servidor tenga ese módulo.
-        </p>
-      ) : incidents.length === 0 ? (
-        <p className="muted">No hay incidencias registradas.</p>
-      ) : (
-        <div className="table-wrapper">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Descripción</th>
-                <th>Estado</th>
-                <th>Registrada</th>
-              </tr>
-            </thead>
-            <tbody>
-              {incidents.map((i) => {
-                const status = INCIDENT_STATUS[i.status] ?? { label: i.status, css: "badge-gray" };
-                return (
-                  <tr key={i.incident_id} className="no-click">
-                    <td>{i.code}</td>
-                    <td>{i.description ?? "—"}</td>
-                    <td>
-                      <span className={`badge ${status.css}`}>{status.label}</span>
-                    </td>
-                    <td>{new Date(i.registered_at).toLocaleString("es-MX")}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <div className="dash-grid">
+        <section className="card map-card">
+          <div className="card-header">
+            <h2>Ubicación en tiempo real</h2>
+          </div>
+          <div className="map-placeholder">
+            {/* Dibujo decorativo: el mapa real llega con el módulo de Viajes */}
+            <svg viewBox="0 0 600 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <rect width="600" height="300" fill="#f1e6ea" />
+              <rect x="30" y="30" width="180" height="90" rx="14" fill="#e6d3d9" />
+              <rect x="250" y="30" width="140" height="90" rx="14" fill="#d4e3cf" />
+              <rect x="430" y="30" width="140" height="90" rx="14" fill="#e6d3d9" />
+              <rect x="30" y="160" width="180" height="80" rx="14" fill="#e6d3d9" />
+              <rect x="250" y="160" width="320" height="80" rx="14" fill="#e6d3d9" />
+              <path d="M0 270C120 250 260 290 380 270S520 255 600 270V300H0Z" fill="#c9dbe6" />
+              <path d="M0 140H600M225 0V300M410 0V300" stroke="#fff" strokeWidth="14" fill="none" />
+            </svg>
+            <p className="map-note">
+              El mapa en vivo estará disponible cuando el módulo de Viajes esté conectado.
+            </p>
+          </div>
+        </section>
+
+        <section className="card alerts-card">
+          <div className="card-header">
+            <h2>Alertas recientes</h2>
+          </div>
+          {!incidents_available ? (
+            <p className="muted">
+              Las incidencias estarán disponibles cuando el servidor tenga ese módulo.
+            </p>
+          ) : incidents.length === 0 ? (
+            <p className="muted">No hay incidencias registradas.</p>
+          ) : (
+            incidents.map((i) => {
+              const status = INCIDENT_STATUS[i.status] ?? { label: i.status, dot: "low" };
+              return (
+                <div key={i.incident_id} className="alert-item">
+                  <span className={`alert-dot ${status.dot}`} />
+                  <div>
+                    <div className="alert-title">{i.description ?? i.code}</div>
+                    <div className="alert-sub">
+                      {i.code} · {status.label} ·{" "}
+                      {new Date(i.registered_at).toLocaleString("es-MX", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+          <Link to="/incidents" className="btn-outline">
+            Ver todas las alertas
+          </Link>
+        </section>
+      </div>
     </>
   );
 }

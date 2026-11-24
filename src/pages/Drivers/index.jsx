@@ -31,6 +31,22 @@ function get_error_text(err) {
   return "No se pudo cargar la lista de conductores.";
 }
 
+// Nombre completo e iniciales para el avatar
+function get_full_name(driver) {
+  return driver.user ? `${driver.user.first_name} ${driver.user.last_name}` : "—";
+}
+
+function get_initials(driver) {
+  if (!driver.user) return "?";
+  return `${driver.user.first_name.charAt(0)}${driver.user.last_name.charAt(0)}`.toUpperCase();
+}
+
+function StatusBadge({ driver }) {
+  if (!driver.is_enabled) return <span className="badge badge-gray">Deshabilitado</span>;
+  if (driver.is_active) return <span className="badge badge-green">En servicio</span>;
+  return <span className="badge badge-blue">Disponible</span>;
+}
+
 export default function Drivers() {
   const [drivers, set_drivers] = useState([]);
   const [is_loading, set_is_loading] = useState(true);
@@ -79,13 +95,15 @@ export default function Drivers() {
   if (error) return <div className="error">{error}</div>;
 
   return (
-    <div>
-      <h1>Conductores</h1>
-      <p className="muted">Consulta la información de los conductores registrados.</p>
+    <div className="page">
+      <div className="page-header">
+        <h1>Conductores</h1>
+        <p className="muted">Consulta la información de los conductores registrados.</p>
+      </div>
 
       <input
         className="search-input"
-        placeholder="Buscar por nombre, licencia o correo..."
+        placeholder="Buscar por nombre, licencia o correo"
         value={search}
         onChange={(e) => set_search(e.target.value)}
       />
@@ -97,108 +115,115 @@ export default function Drivers() {
             : "Ningún conductor coincide con la búsqueda."}
         </p>
       ) : (
-        <div className="table-wrapper">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Licencia</th>
-                <th>Clase</th>
-                <th>Vence</th>
-                <th>Vigencia</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((d) => {
-                const license = get_license_status(d.license_exp_date);
-                return (
-                  <tr key={d.driver_id} onClick={() => set_selected(d)}>
-                    <td>
-                      {d.user ? `${d.user.first_name} ${d.user.last_name}` : "—"}
-                    </td>
-                    <td>{d.license_number}</td>
-                    <td>{d.license_class}</td>
-                    <td>{format_date(d.license_exp_date)}</td>
-                    <td>
-                      <span className={`badge ${license.css}`}>{license.label}</span>
-                    </td>
-                    <td>
-                      {!d.is_enabled ? (
-                        <span className="badge badge-gray">Deshabilitado</span>
-                      ) : d.is_active ? (
-                        <span className="badge badge-green">En servicio</span>
-                      ) : (
-                        <span className="badge badge-blue">Disponible</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+        <div className="drivers-layout">
+          <div className="table-wrapper drivers-table">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Licencia</th>
+                  <th>Clase</th>
+                  <th>Vence</th>
+                  <th>Vigencia</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((d) => {
+                  const license = get_license_status(d.license_exp_date);
+                  const is_selected = selected?.driver_id === d.driver_id;
+                  return (
+                    <tr
+                      key={d.driver_id}
+                      className={is_selected ? "row-selected" : ""}
+                      onClick={() => set_selected(d)}
+                    >
+                      <td>
+                        <div className="person-cell">
+                          <span className="avatar-sm">{get_initials(d)}</span>
+                          <strong>{get_full_name(d)}</strong>
+                        </div>
+                      </td>
+                      <td className="mono">{d.license_number}</td>
+                      <td>{d.license_class}</td>
+                      <td className="muted">{format_date(d.license_exp_date)}</td>
+                      <td>
+                        <span className={`badge ${license.css}`}>{license.label}</span>
+                      </td>
+                      <td>
+                        <StatusBadge driver={d} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-      {selected && (
-        <DriverDetail driver={selected} on_close={() => set_selected(null)} />
+          <DriverPanel driver={selected} />
+        </div>
       )}
     </div>
   );
 }
 
-// Ventana con toda la información de un conductor
-function DriverDetail({ driver, on_close }) {
+// Panel con la información del conductor seleccionado
+function DriverPanel({ driver }) {
+  if (!driver) {
+    return (
+      <aside className="driver-panel driver-panel-empty">
+        Selecciona un conductor de la tabla para ver su información.
+      </aside>
+    );
+  }
+
   const license = get_license_status(driver.license_exp_date);
   const user = driver.user;
 
   return (
-    <div className="modal-backdrop" onClick={on_close}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>{user ? `${user.first_name} ${user.last_name}` : "Conductor"}</h2>
-          <button className="modal-close" onClick={on_close}>
-            ✕
-          </button>
+    <aside className="driver-panel">
+      <div className="driver-panel-head">
+        <span className="avatar-lg">{get_initials(driver)}</span>
+        <div>
+          <h2>{get_full_name(driver)}</h2>
+          <span className="muted small">{user?.email ?? "—"}</span>
         </div>
-
-        <h3>Contacto</h3>
-        <dl className="detail-list">
-          <dt>Correo</dt>
-          <dd>{user?.email ?? "—"}</dd>
-          <dt>Teléfono</dt>
-          <dd>{user?.phone_number ?? "—"}</dd>
-          <dt>Usuario</dt>
-          <dd>{user?.username ?? "—"}</dd>
-        </dl>
-
-        <h3>Licencia de conducir</h3>
-        <dl className="detail-list">
-          <dt>Número</dt>
-          <dd>{driver.license_number}</dd>
-          <dt>Clase</dt>
-          <dd>{driver.license_class}</dd>
-          <dt>Expedición</dt>
-          <dd>{format_date(driver.license_iss_date)}</dd>
-          <dt>Vencimiento</dt>
-          <dd>
-            {format_date(driver.license_exp_date)}{" "}
-            <span className={`badge ${license.css}`}>{license.label}</span>
-          </dd>
-        </dl>
-
-        <h3>Estado</h3>
-        <dl className="detail-list">
-          <dt>Cuenta</dt>
-          <dd>{driver.is_enabled ? "Habilitada" : "Deshabilitada"}</dd>
-          <dt>En servicio</dt>
-          <dd>{driver.is_active ? "Sí" : "No"}</dd>
-          <dt>Telegram</dt>
-          <dd>{driver.telegram_user_id ? "Vinculado" : "Sin vincular"}</dd>
-          <dt>Registrado</dt>
-          <dd>{format_date(driver.registered_at.slice(0, 10))}</dd>
-        </dl>
       </div>
-    </div>
+
+      <h3>Contacto</h3>
+      <dl className="detail-list">
+        <dt>Teléfono</dt>
+        <dd>{user?.phone_number ?? "—"}</dd>
+        <dt>Usuario</dt>
+        <dd>{user?.username ?? "—"}</dd>
+      </dl>
+
+      <h3>Licencia de conducir</h3>
+      <dl className="detail-list">
+        <dt>Número</dt>
+        <dd className="mono">{driver.license_number}</dd>
+        <dt>Clase</dt>
+        <dd>{driver.license_class}</dd>
+        <dt>Expedición</dt>
+        <dd>{format_date(driver.license_iss_date)}</dd>
+        <dt>Vencimiento</dt>
+        <dd>
+          {format_date(driver.license_exp_date)}{" "}
+          <span className={`badge ${license.css}`}>{license.label}</span>
+        </dd>
+      </dl>
+
+      <h3>Estado</h3>
+      <dl className="detail-list">
+        <dt>Cuenta</dt>
+        <dd>{driver.is_enabled ? "Habilitada" : "Deshabilitada"}</dd>
+        <dt>En servicio</dt>
+        <dd>{driver.is_active ? "Sí" : "No"}</dd>
+        <dt>Telegram</dt>
+        <dd>{driver.telegram_user_id ? "Vinculado" : "Sin vincular"}</dd>
+        <dt>Registrado</dt>
+        <dd>{format_date(driver.registered_at.slice(0, 10))}</dd>
+      </dl>
+    </aside>
   );
 }

@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import Icon from "./Icon";
 
 const ALL_ROLES = ["ADMIN", "AGENT", "DRIVER"];
 
@@ -11,13 +12,13 @@ const ROLE_LABELS = {
 
 // Enlaces de la barra lateral y los roles que pueden verlos
 const nav_links = [
-  { to: "/", label: "Inicio", icon: "🏠", roles: ALL_ROLES },
-  { to: "/trips", label: "Viajes", icon: "🧭", roles: ALL_ROLES },
-  { to: "/incidents", label: "Incidencias y eventos", icon: "⚠️", roles: ALL_ROLES },
-  { to: "/drivers", label: "Conductores", icon: "🧑‍✈️", roles: ["ADMIN", "AGENT"] },
-  { to: "/vehicles", label: "Vehículos", icon: "🚗", roles: ALL_ROLES },
-  { to: "/admin", label: "Administración", icon: "🛠️", roles: ["ADMIN"] },
-  { to: "/account", label: "Cuenta", icon: "⚙️", roles: ALL_ROLES },
+  { to: "/", label: "Inicio", icon: "home", roles: ALL_ROLES },
+  { to: "/trips", label: "Viajes", icon: "trips", roles: ALL_ROLES },
+  { to: "/incidents", label: "Incidencias y eventos", icon: "incidents", roles: ALL_ROLES },
+  { to: "/drivers", label: "Conductores", icon: "drivers", roles: ["ADMIN", "AGENT"] },
+  { to: "/vehicles", label: "Vehículos", icon: "vehicles", roles: ALL_ROLES },
+  { to: "/admin", label: "Administración", icon: "admin", roles: ["ADMIN"] },
+  { to: "/account", label: "Cuenta", icon: "account", roles: ALL_ROLES },
 ];
 
 export default function Sidebar() {
@@ -30,13 +31,13 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="side">
-      <div className="side-brand">
-        <span className="side-logo">A</span>
+    <aside className="app-side">
+      <div className="app-brand">
+        <span className="app-logo">A</span>
         AxoMotor
       </div>
 
-      <nav className="side-nav">
+      <nav className="app-nav">
         {nav_links
           // Solo se muestran las secciones permitidas para el rol del usuario
           .filter((link) => link.roles.includes(user.role))
@@ -45,15 +46,17 @@ export default function Sidebar() {
               key={link.to}
               to={link.to}
               end={link.to === "/"}
-              className={({ isActive }) => (isActive ? "side-link active" : "side-link")}
+              className={({ isActive }) =>
+                isActive ? "app-nav-link active" : "app-nav-link"
+              }
             >
-              <span>{link.icon}</span>
+              <Icon name={link.icon} />
               {link.label}
             </NavLink>
           ))}
       </nav>
 
-      <div className="side-footer">
+      <div className="app-side-footer">
         <span>Sesión de {ROLE_LABELS[user.role] ?? user.role}</span>
         <button onClick={handle_logout}>Cerrar sesión</button>
       </div>

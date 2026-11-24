@@ -5,11 +5,11 @@ import Sidebar from "./Sidebar";
 // Estructura general: barra lateral a la izquierda; a la derecha, cabecera y contenido
 export default function Layout() {
   return (
-    <div className="shell">
-      <Sidebar />
-      <div className="shell-main">
-        <Navbar />
-        <main className="shell-content">
+<div className="app-shell" style={{ display: "flex", minHeight: "100vh" }}>
+          <Sidebar />
+<div className="app-main" style={{ flex: 1, minWidth: 0 }}>
+            <Navbar />
+        <main className="app-content">
           <Outlet />
         </main>
       </div>

@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
-import Icon from "../../components/Icon";
 import { get_license_status } from "../Admin/helpers";
+import { WelcomeBanner, AccessCards } from "./Welcome";
 
 // Etiqueta y punto de color de cada estado de incidencia del backend
 const INCIDENT_STATUS = {
@@ -13,47 +13,15 @@ const INCIDENT_STATUS = {
   DISCARDED: { label: "Descartada", dot: "low" },
 };
 
-// Accesos rápidos (los enlaces de admin solo se muestran a administradores)
-const QUICK_ACTIONS = [
-  { to: "/trips", label: "Crear un viaje", icon: "plus" },
-  { to: "/trips", label: "Dar seguimiento", icon: "pin" },
-  { to: "/incidents", label: "Historial de incidencias", icon: "incidents" },
-  { to: "/incidents", label: "Historial de eventos", icon: "clipboard" },
-  { to: "/admin", label: "Administración", icon: "admin", admin_only: true },
-];
-
-function QuickActions({ role }) {
-  return (
-    <div className="quick-actions">
-      {QUICK_ACTIONS.filter((a) => !a.admin_only || role === "ADMIN").map((a) => (
-        <Link key={a.label} to={a.to} className="quick-action">
-          <Icon name={a.icon} size={18} />
-          {a.label}
-        </Link>
-      ))}
-    </div>
-  );
-}
-
 export default function Dashboard() {
   const { user } = useAuth();
   const is_staff = user.role === "ADMIN" || user.role === "AGENT";
 
   return (
     <div className="page">
-      <div className="page-header">
-        <h1>Hola, {user.username}</h1>
-      </div>
-
-      {is_staff ? (
-        <StaffOverview />
-      ) : (
-        <p className="muted">
-          Desde el menú puedes consultar tus viajes, vehículos e incidencias.
-        </p>
-      )}
-
-      <QuickActions role={user.role} />
+      <WelcomeBanner user={user} />
+      {is_staff && <StaffOverview />}
+      <AccessCards role={user.role} />
     </div>
   );
 }

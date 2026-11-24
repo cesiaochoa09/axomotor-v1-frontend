@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
 import api from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
+import Icon from "../../components/Icon";
 
 // Formato del diccionario de datos: +XX-XXX-XXX-XXXX
 const PHONE_REGEX = /^\+\d{2}-\d{3}-\d{3}-\d{4}$/;
+
+const ROLE_LABELS = {
+  ADMIN: "Administrador",
+  DRIVER: "Conductor",
+  AGENT: "Agente",
+};
 
 // Convierte el error del backend en un texto en español para el usuario
 function get_error_text(err, fallback) {
@@ -19,6 +26,34 @@ function get_error_text(err, fallback) {
     return "Los datos enviados no son válidos.";
   }
   return fallback;
+}
+
+// Campo con ícono a la izquierda
+function Field({ label, icon, children }) {
+  return (
+    <label className="field">
+      <span className="field-label">{label}</span>
+      <span className="input-icon">
+        <Icon name={icon} size={18} />
+        {children}
+      </span>
+    </label>
+  );
+}
+
+// Encabezado de cada tarjeta: ícono, título y descripción
+function CardHead({ icon, title, text }) {
+  return (
+    <div className="form-card-head">
+      <span className="form-card-icon">
+        <Icon name={icon} size={20} />
+      </span>
+      <div>
+        <h2>{title}</h2>
+        <p>{text}</p>
+      </div>
+    </div>
+  );
 }
 
 export default function Account() {
@@ -38,6 +73,7 @@ export default function Account() {
   const [current_password, set_current_password] = useState("");
   const [new_password, set_new_password] = useState("");
   const [confirm_password, set_confirm_password] = useState("");
+  const [show_passwords, set_show_passwords] = useState(false);
   const [password_msg, set_password_msg] = useState(null);
   const [is_saving_password, set_is_saving_password] = useState(false);
 
@@ -150,75 +186,179 @@ export default function Account() {
   if (is_loading) return <p>Cargando...</p>;
   if (load_error) return <div className="error">{load_error}</div>;
 
+  // Requisitos de la nueva contraseña (solo orientativos, el backend valida)
+  const rules = [
+    { ok: new_password.length >= 8, text: "Mínimo 8 caracteres" },
+    { ok: /[a-z]/.test(new_password) && /[A-Z]/.test(new_password), text: "Mayúsculas y minúsculas" },
+    { ok: /\d/.test(new_password), text: "Al menos un número" },
+    { ok: new_password.length > 0 && new_password === confirm_password, text: "Las contraseñas coinciden" },
+  ];
+  // El medidor cuenta solo las tres primeras reglas
+  const score = rules.slice(0, 3).filter((r) => r.ok).length;
+  const strength_label = ["", "Débil", "Media", "Fuerte"][score];
+  const password_type = show_passwords ? "text" : "password";
+
+  const initials = `${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}`.toUpperCase();
+
   return (
-    <div>
-      <h1>Cuenta</h1>
-      <p className="muted">
-        {profile.first_name} {profile.last_name} · usuario <b>{profile.username}</b>
-      </p>
+    <div className="page">
+      <div className="page-header">
+        <h1>Cuenta</h1>
+        <p className="muted">Administra tus datos de contacto y la seguridad de tu cuenta.</p>
+      </div>
 
-      <form className="card" onSubmit={handle_contact_submit}>
-        <h2>Datos de contacto</h2>
-        <label>Correo electrónico</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => set_email(e.target.value)}
-          maxLength={120}
-          required
-        />
-        <label>Número de teléfono</label>
-        <input
-          value={phone_number}
-          onChange={(e) => set_phone_number(e.target.value)}
-          placeholder="+52-664-123-4567"
-          maxLength={16}
-          required
-        />
-        {contact_msg && (
-          <div className={contact_msg.type === "ok" ? "success" : "error"}>
-            {contact_msg.text}
+      {/* Banner con los datos principales */}
+      <section className="account-hero">
+        <div className="account-hero-main">
+          <span className="account-hero-avatar">{initials}</span>
+          <div>
+            <h2>
+              {profile.first_name} {profile.last_name}
+            </h2>
+            <span className="account-hero-user">@{profile.username}</span>
+            <div className="account-hero-pills">
+              <span>{ROLE_LABELS[user.role] ?? user.role}</span>
+              <span>{profile.is_enabled ? "Cuenta habilitada" : "Cuenta deshabilitada"}</span>
+            </div>
           </div>
-        )}
-        <button className="btn-primary" type="submit" disabled={is_saving_contact}>
-          {is_saving_contact ? "Guardando..." : "Guardar cambios"}
-        </button>
-      </form>
+        </div>
+        <div className="account-hero-stats">
+          <div>
+            <span>Correo</span>
+            <b>{profile.email}</b>
+          </div>
+          <div>
+            <span>Teléfono</span>
+            <b>{profile.phone_number}</b>
+          </div>
+        </div>
+      </section>
 
-      <form className="card" onSubmit={handle_password_submit}>
-        <h2>Cambiar contraseña</h2>
-        <label>Contraseña actual</label>
-        <input
-          type="password"
-          value={current_password}
-          onChange={(e) => set_current_password(e.target.value)}
-          required
-        />
-        <label>Nueva contraseña</label>
-        <input
-          type="password"
-          value={new_password}
-          onChange={(e) => set_new_password(e.target.value)}
-          minLength={8}
-          maxLength={120}
-          required
-        />
-        <label>Confirmar nueva contraseña</label>
-        <input
-          type="password"
-          value={confirm_password}
-          onChange={(e) => set_confirm_password(e.target.value)}
-          required
-        />
-        {password_msg && (
-          <div className={password_msg.type === "ok" ? "success" : "error"}>
-            {password_msg.text}
+      <div className="account-grid">
+        <form className="form-card" onSubmit={handle_contact_submit}>
+          <CardHead
+            icon="mail"
+            title="Datos de contacto"
+            text="Los usamos para avisarte de alertas y recuperar tu cuenta."
+          />
+          <Field label="Correo electrónico" icon="mail">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => set_email(e.target.value)}
+              maxLength={120}
+              required
+            />
+          </Field>
+          <Field label="Número de teléfono" icon="phone">
+            <input
+              value={phone_number}
+              onChange={(e) => set_phone_number(e.target.value)}
+              placeholder="+52-664-123-4567"
+              maxLength={16}
+              required
+            />
+          </Field>
+          <span className="field-hint">Formato: +52-664-123-4567</span>
+          {contact_msg && (
+            <div className={contact_msg.type === "ok" ? "success" : "error"}>
+              {contact_msg.text}
+            </div>
+          )}
+          <div className="form-card-actions">
+            <button className="btn-primary" type="submit" disabled={is_saving_contact}>
+              {is_saving_contact ? "Guardando..." : "Guardar cambios"}
+            </button>
           </div>
-        )}
-        <button className="btn-primary" type="submit" disabled={is_saving_password}>
-          {is_saving_password ? "Guardando..." : "Cambiar contraseña"}
-        </button>
-      </form>
+        </form>
+
+        <form className="form-card" onSubmit={handle_password_submit}>
+          <CardHead
+            icon="lock"
+            title="Cambiar contraseña"
+            text="Usa una contraseña que no hayas usado en otro sitio."
+          />
+          <Field label="Contraseña actual" icon="lock">
+            <input
+              type={password_type}
+              value={current_password}
+              onChange={(e) => set_current_password(e.target.value)}
+              required
+            />
+          </Field>
+          <Field label="Nueva contraseña" icon="lock">
+            <input
+              type={password_type}
+              value={new_password}
+              onChange={(e) => set_new_password(e.target.value)}
+              minLength={8}
+              maxLength={120}
+              required
+            />
+          </Field>
+          <Field label="Confirmar nueva contraseña" icon="lock">
+            <input
+              type={password_type}
+              value={confirm_password}
+              onChange={(e) => set_confirm_password(e.target.value)}
+              required
+            />
+          </Field>
+
+          {new_password.length > 0 && (
+            <>
+              <div className="strength">
+                <div className={`strength-bars strength-${score}`}>
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <b>{strength_label}</b>
+              </div>
+              <ul className="checklist">
+                {rules.map((r) => (
+                  <li key={r.text} className={r.ok ? "ok" : ""}>
+                    <Icon name="check" size={14} />
+                    {r.text}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {password_msg && (
+            <div className={password_msg.type === "ok" ? "success" : "error"}>
+              {password_msg.text}
+            </div>
+          )}
+          <div className="form-card-actions between">
+            <label className="check-inline">
+              <input
+                type="checkbox"
+                checked={show_passwords}
+                onChange={(e) => set_show_passwords(e.target.checked)}
+              />
+              Mostrar contraseñas
+            </label>
+            <button className="btn-primary" type="submit" disabled={is_saving_password}>
+              {is_saving_password ? "Guardando..." : "Cambiar contraseña"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <section className="form-card">
+        <CardHead
+          icon="admin"
+          title="Consejos de seguridad"
+          text="Pequeños hábitos que protegen tu cuenta."
+        />
+        <ul className="tips-list">
+          <li>No compartas tu contraseña con nadie.</li>
+          <li>Cierra sesión al usar un equipo compartido.</li>
+          <li>Si te llega una alerta que no reconoces, avisa a un administrador.</li>
+        </ul>
+      </section>
     </div>
   );
 }

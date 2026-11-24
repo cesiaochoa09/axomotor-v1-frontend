@@ -56,9 +56,19 @@ export default function Sidebar() {
           ))}
       </nav>
 
-      <div className="app-side-footer">
-        <span>Sesión de {ROLE_LABELS[user.role] ?? user.role}</span>
-        <button onClick={handle_logout}>Cerrar sesión</button>
+      {/* Tarjeta del usuario con sesión */}
+      <div className="side-user">
+        <div className="side-user-info">
+          <span className="side-user-avatar">{user.username.charAt(0).toUpperCase()}</span>
+          <div className="side-user-text">
+            <span className="side-user-name">{user.username}</span>
+            <span className="side-user-role">{ROLE_LABELS[user.role] ?? user.role}</span>
+          </div>
+        </div>
+        <button className="side-logout" onClick={handle_logout}>
+          <Icon name="logout" size={16} />
+          Cerrar sesión
+        </button>
       </div>
     </aside>
   );
